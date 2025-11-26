@@ -1,11 +1,13 @@
 // src/components/Login.jsx
 import React, { useState, useEffect } from "react";
 import { Award, User, Lock, ChevronRight } from "lucide-react";
+import API from "../api"; // <-- Make sure api.js exists
 
 export default function Login({ onLogin }) {
   const [role, setRole] = useState("student");
   const [email, setEmail] = useState("student@college.edu");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (role === "student") setEmail("student@college.edu");
@@ -13,9 +15,27 @@ export default function Login({ onLogin }) {
     if (role === "hod") setEmail("hod@college.edu");
   }, [role]);
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    onLogin(email, role);
+    setLoading(true);
+
+    try {
+      const { data } = await API.post("/auth/login", {
+        email,
+        password,
+        role
+      });
+
+      // Save token + user in browser
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      onLogin(data.user); // Pass user to App
+    } catch (err) {
+      alert("Invalid Credentials or Role does not match!");
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -47,26 +67,35 @@ export default function Login({ onLogin }) {
             ))}
           </div>
 
-          {/* Email */}
+          {/* Email Input */}
           <div className="relative">
             <User className="absolute left-3 top-3 text-gray-400" size={18} />
-            <input className="w-full bg-slate-900/60 rounded-xl border border-white/10
-              py-2.5 pl-10 pr-4 text-white" type="email" value={email}
-              onChange={(e) => setEmail(e.target.value)} />
+            <input
+              className="w-full bg-slate-900/60 rounded-xl border border-white/10 py-2.5 pl-10 pr-4 text-white"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
 
-          {/* Password */}
+          {/* Password Input */}
           <div className="relative">
             <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
-            <input className="w-full bg-slate-900/60 rounded-xl border border-white/10
-              py-2.5 pl-10 pr-4 text-white" type="password" value={password}
-              onChange={(e) => setPassword(e.target.value)} />
+            <input
+              className="w-full bg-slate-900/60 rounded-xl border border-white/10 py-2.5 pl-10 pr-4 text-white"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
 
+          {/* Submit Button */}
           <button type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl 
-            py-3 flex items-center justify-center gap-2 font-medium">
-            Sign In <ChevronRight size={18} />
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-3 flex items-center justify-center gap-2 font-medium">
+            {loading ? "Processing..." : <>Sign In <ChevronRight size={18} /></>}
           </button>
         </form>
       </div>
