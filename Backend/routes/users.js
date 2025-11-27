@@ -1,9 +1,9 @@
-// routes/users.js
+
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
 const bcrypt = require("bcryptjs");
-// GET all users (only id, name, role)
+
 router.get("/list", async (req, res) => {
   try {
     const [rows] = await db.query(

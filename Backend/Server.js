@@ -5,12 +5,14 @@ const multer = require("multer");
 const mysql = require("mysql2/promise");
 
 const userRoutes = require("./routes/users");
+const authRoutes = require("./routes/auth");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use("/api/auth", authRoutes);
 
-// Database Pool
+// Database 
 const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -30,7 +32,7 @@ const db = mysql.createPool({
   }
 })();
 
-// Apply Users Router
+//  Users Router
 app.use("/api/users", userRoutes);
 
 // Multer for PDF Upload
@@ -41,9 +43,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 // -----------------------------
 const auth = () => (req, res, next) => next();
 
-// =====================
 // EVENTS API
-// =====================
 app.post("/events", auth(), async (req, res) => {
   try {
     const { name, category, level } = req.body;
@@ -55,9 +55,7 @@ app.post("/events", auth(), async (req, res) => {
   }
 });
 
-// =====================
 // CERTIFICATE UPLOAD
-// =====================
 app.post("/certificates/upload/:pid", upload.single("file"), async (req, res) => {
   try {
     if (!req.file)
@@ -81,9 +79,8 @@ app.post("/certificates/upload/:pid", upload.single("file"), async (req, res) =>
   }
 });
 
-// =====================
-// SERVER START
-// =====================
+
+// SERVER 
 app.listen(process.env.PORT, () =>
   console.log(`🚀 Server running on port ${process.env.PORT}`)
 );

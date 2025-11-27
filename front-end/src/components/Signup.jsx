@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 
-const API = "http://localhost:5000/api/users/add";
+const API = "http://localhost:5000/api/auth/register";
 
 
 export default function Signup() {
@@ -10,12 +10,12 @@ export default function Signup() {
     email: "",
     password: "",
     role: "STUDENT",
-    dept_id: "",
+    dept: "",
     sem: "",
     section: ""
   });
 
-  const updateField = (e) => {
+  const update = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -23,20 +23,19 @@ export default function Signup() {
     e.preventDefault();
     try {
       const res = await axios.post(API, form);
-      alert("User Registered! ID: " + res.data.user_id);
-      
-      // Reset form
+      alert(res.data.message);
       setForm({
         name: "",
         email: "",
         password: "",
         role: "STUDENT",
-        dept_id: "",
+        dept: "",
         sem: "",
         section: ""
       });
     } catch (err) {
-      alert("Signup failed: " + err.response?.data?.message);
+      alert("Signup Failed!");
+      console.error(err.response?.data);
     }
   };
 
@@ -49,47 +48,46 @@ export default function Signup() {
         </h2>
 
         <form className="space-y-3" onSubmit={submitSignup}>
-          <input className="w-full p-2 rounded text-black" 
-            placeholder="Full Name" 
-            name="name" value={form.name} onChange={updateField} />
 
-          <input className="w-full p-2 rounded text-black" 
-            placeholder="Email" 
-            type="email" name="email" 
-            value={form.email} onChange={updateField} />
+          <input className="w-full p-2 rounded text-black"
+            name="name" placeholder="Full Name"
+            value={form.name} onChange={update} />
 
-          <input className="w-full p-2 rounded text-black" 
-            placeholder="Password"
-            type="password" name="password"
-            value={form.password} onChange={updateField} />
+          <input className="w-full p-2 rounded text-black"
+            type="email" placeholder="Email"
+            name="email" value={form.email} onChange={update} />
+
+          <input className="w-full p-2 rounded text-black"
+            type="password" placeholder="Password"
+            name="password" value={form.password} onChange={update} />
 
           <select className="w-full p-2 rounded text-black"
-            name="role" value={form.role} onChange={updateField}>
+            name="role" value={form.role} onChange={update}>
             <option value="STUDENT">Student</option>
             <option value="MENTOR">Mentor</option>
             <option value="HOD">HOD</option>
           </select>
 
-          {/* Student-specific fields */}
           {form.role === "STUDENT" && (
             <>
-              <input className="w-full p-2 rounded text-black" 
-                placeholder="Department ID"
-                name="dept_id" value={form.dept_id} onChange={updateField} />
+              <input className="w-full p-2 rounded text-black"
+                name="dept" placeholder="Department ID (Number)"
+                value={form.dept} onChange={update} />
 
-              <input className="w-full p-2 rounded text-black" 
-                placeholder="Semester"
-                name="sem" value={form.sem} onChange={updateField} />
+              <input className="w-full p-2 rounded text-black"
+                name="sem" placeholder="Semester"
+                value={form.sem} onChange={update} />
 
-              <input className="w-full p-2 rounded text-black" 
-                placeholder="Section"
-                name="section" value={form.section} onChange={updateField} />
+              <input className="w-full p-2 rounded text-black"
+                name="section" placeholder="Section"
+                value={form.section} onChange={update} />
             </>
           )}
 
           <button className="bg-blue-500 hover:bg-blue-600 w-full p-2 rounded-xl font-semibold">
             Sign Up
           </button>
+
         </form>
       </div>
     </div>
