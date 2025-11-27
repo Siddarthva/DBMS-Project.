@@ -1,122 +1,102 @@
-// src/components/Student.jsx
-import React, { useState } from "react";
-import { EVENTS, INITIAL_CERTIFICATES } from "../mockData";
-import { GlassCard, Button, Badge, FileUploadModal } from "../ui";
-import { Award, FileText, Trophy, Upload } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function Student({ user, view }) {
-  const [certs, setCerts] = useState(INITIAL_CERTIFICATES);
-  const [uploadOpen, setUploadOpen] = useState(false);
-  const [selectedCert, setSelectedCert] = useState(null);
+  const [events, setEvents] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState("");
+  const [participationId, setParticipationId] = useState(null);
+  const [file, setFile] = useState(null);
 
-  const myCerts = certs.filter((c) => c.studentId === user.id);
+  // Load events student can select
+  useEffect(() => {
+    fetch("http://localhost:5000/events", {
+      headers: { Authorization: `Bearer test` } // remove auth later
+    })
+      .then(res => res.json())
+      .then(data => setEvents(data));
+  }, []);
 
-  const participate = (ev) => {
-    setCerts([
-      {
-        id: Math.floor(Math.random() * 90000),
-        eventId: ev.id,
-        eventName: ev.title,
-        studentId: user.id,
-        studentName: user.name,
-        dept: user.dept,
-        status: "pending_upload",
+  // Step-1: Create Participation Entry
+  const submitParticipation = async () => {
+    if (!selectedEvent) return alert("Select an event");
+
+    const res = await fetch("http://localhost:5000/participations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer test` // remove auth later
       },
-      ...certs,
-    ]);
+      body: JSON.stringify({
+        event_id: selectedEvent,
+        role: "PARTICIPANT"
+      })
+    });
+
+    const data = await res.json();
+    if (data.id) {
+      setParticipationId(data.id);
+      alert("Participation registered! Now upload certificate.");
+    } else {
+      alert("Error creating participation!");
+    }
   };
 
-  const uploadFile = (file) => {
-    setCerts((prev) =>
-      prev.map((c) =>
-        c.id === selectedCert ? { ...c, status: "pending_mentor", file: file.name } : c
-      )
+  // Step-2: Upload PDF
+  const uploadCertificate = async () => {
+    if (!file || !participationId)
+      return alert("Create participation first!");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(
+      `http://localhost:5000/certificates/upload/${participationId}`,
+      { method: "POST", body: formData }
     );
-    setUploadOpen(false);
+
+    const data = await res.json();
+    alert(data.message);
   };
 
-  if (view === "dashboard") {
-    return (
-      <div className="space-y-6 animate-fade-in">
-        
-        {/* Profile */}
-        <GlassCard className="flex items-center gap-4">
-          <div className="bg-blue-600 w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold">
-            {user.name[0]}
-          </div>
-          <div>
-            <p className="text-xl font-bold">{user.name}</p>
-            <p className="text-sm text-gray-400">{user.dept} | Sem {user.sem}</p>
-          </div>
-        </GlassCard>
+  if (view !== "history") return null;
 
-        {/* Activity */}
-        <GlassCard>
-          <p className="font-bold mb-2">Recent Certificates</p>
-          {myCerts.slice(0, 3).map((c) => (
-            <div key={c.id} className="flex justify-between border-b border-white/10 py-2">
-              <span>{c.eventName}</span>
-              <Badge status={c.status} />
-            </div>
-          ))}
-          {myCerts.length === 0 && <p className="text-gray-400">No activity</p>}
-        </GlassCard>
+  return (
+    <div className="space-y-4 text-white">
+      <h2 className="text-xl font-bold">Upload Certificate</h2>
 
-      </div>
-    );
-  }
-
-  if (view === "events") {
-    return (
-      <div className="grid md:grid-cols-2 gap-4 animate-fade">
-        {EVENTS.map((ev) => (
-          <GlassCard key={ev.id} className="flex flex-col gap-4">
-            <p className="text-lg font-bold">{ev.title}</p>
-            <p className="flex gap-2 text-blue-300"><Trophy /> {ev.points} pts</p>
-            <Button
-              onClick={() => participate(ev)}
-              icon={Award}
-              className="mt-auto"
-            >
-              Participate
-            </Button>
-          </GlassCard>
+      {/* Event Selection */}
+      <select
+        className="bg-black p-2 rounded border border-white/20"
+        onChange={e => setSelectedEvent(e.target.value)}
+      >
+        <option value="">Select Event</option>
+        {events.map(ev => (
+          <option key={ev.event_id} value={ev.event_id}>
+            {ev.name}
+          </option>
         ))}
-      </div>
-    );
-  }
+      </select>
 
-  if (view === "history") {
-    return (
-      <div className="space-y-4">
-        {myCerts.map((c) => (
-          <GlassCard key={c.id} className="flex justify-between items-center">
-            <p>{c.eventName}</p>
-            <div className="flex gap-3">
-              <Badge status={c.status} />
-              {c.status === "pending_upload" && (
-                <Button
-                  size="sm"
-                  icon={Upload}
-                  onClick={() => {
-                    setSelectedCert(c.id);
-                    setUploadOpen(true);
-                  }}
-                >
-                  Upload
-                </Button>
-              )}
-            </div>
-          </GlassCard>
-        ))}
-        <FileUploadModal
-          open={uploadOpen}
-          onClose={() => setUploadOpen(false)}
-          onUpload={uploadFile}
-        />
-      </div>
-    );
-  }
+      <button
+        onClick={submitParticipation}
+        className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700"
+      >
+        Submit Participation
+      </button>
 
-  return null;
+      {/* File Upload */}
+      <input
+        type="file"
+        accept="application/pdf"
+        className="bg-black p-2 rounded border border-white/20"
+        onChange={e => setFile(e.target.files[0])}
+      />
+
+      <button
+        onClick={uploadCertificate}
+        className="bg-green-600 px-4 py-2 rounded hover:bg-green-700"
+      >
+        Upload Certificate
+      </button>
+    </div>
+  );
 }
