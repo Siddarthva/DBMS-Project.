@@ -12,7 +12,6 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 
-// Database 
 const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -22,25 +21,19 @@ const db = mysql.createPool({
   connectionLimit: 10
 });
 
-// Check DB connection on startup
 (async function () {
   try {
     await db.query("SELECT 1");
-    console.log("🎯 Database connected successfully!");
+    console.log(" Database connected successfully!");
   } catch (err) {
-    console.error("❌ DB connection failed", err);
+    console.error("DB connection failed", err);
   }
 })();
 
-//  Users Router
 app.use("/api/users", userRoutes);
 
-// Multer for PDF Upload
 const upload = multer({ storage: multer.memoryStorage() });
 
-// -----------------------------
-// TEMP — DISABLE AUTH FOR TESTING
-// -----------------------------
 const auth = () => (req, res, next) => next();
 
 // EVENTS API
@@ -82,7 +75,7 @@ app.post("/certificates/upload/:pid", upload.single("file"), async (req, res) =>
 
 // SERVER 
 app.listen(process.env.PORT, () =>
-  console.log(`🚀 Server running on port ${process.env.PORT}`)
+  console.log(`Server running on port ${process.env.PORT}`)
 );
 
 module.exports = db;
